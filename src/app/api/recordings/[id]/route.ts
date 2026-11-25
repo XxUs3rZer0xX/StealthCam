@@ -87,3 +87,32 @@ export async function GET(
     },
   });
 }
+
+// DELETE — remove a recorded clip. Any authenticated device (the phone can
+// clear its own archive).
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  if (!authed(request)) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+
+  const { id } = await context.params;
+  if (!ID_PATTERN.test(id)) {
+    return NextResponse.json({ error: 'Invalid recording id' }, { status: 400 });
+  }
+
+  const filePath = path.join(RECORDINGS_DIR, `${id}.webm`);
+  try {
+    await fs.unlink(filePath);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return NextResponse.json({ error: 'Recording not found' }, { status: 404 });
+    }
+    console.error('Recording delete error:', err);
+    return NextResponse.json({ error: 'Failed to delete recording' }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true, id });
+}

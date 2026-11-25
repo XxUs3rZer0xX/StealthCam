@@ -308,9 +308,9 @@ const ComputerClient: React.FC = () => {
                         />
                       </button>
                     </div>
-                    {motionAlertsEnabled && !isStreaming && (
-                      <p className="text-xs text-[#9977aa]">
-                        Start the stream to begin watching for motion. Clips record only while motion is seen.
+                    {motionAlertsEnabled && (
+                      <p className="text-xs" style={{ color: 'var(--lcars-peach)' }}>
+                        Armed — the camera records motion clips on its own, even with no phone connected. Turn this off to disarm.
                       </p>
                     )}
                   </div>

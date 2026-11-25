@@ -53,6 +53,7 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
   const [motionAlertsEnabled, setMotionAlertsEnabled] = useState(true);
   const [lastMotion, setLastMotion] = useState<{ at: number; score: number } | null>(null);
   const webrtcRef = useRef<WebRTCService | null>(null);
+  const autoArmedRef = useRef(false);
 
   // Computer client: watch the local camera for motion. On each motion window
   // we (a) alert the phone and (b) record a short, self-contained clip to disk.
@@ -224,6 +225,21 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
     console.log('Requesting stream from connected devices');
     webrtcRef.current.requestStream();
   }, [user]);
+
+  // Camera (computer): arm the camera whenever motion alerts are enabled, even
+  // with no phone connected — so it keeps recording motion clips on its own.
+  // Turning the "Motion alerts & recording" toggle off disarms (and stops) it.
+  useEffect(() => {
+    if (!user || user.deviceType !== 'computer' || !isConnected) return;
+
+    if (motionAlertsEnabled && !isStreaming) {
+      autoArmedRef.current = true;
+      startStreaming().catch((err) => console.error('Auto-arm failed:', err));
+    } else if (!motionAlertsEnabled && isStreaming && autoArmedRef.current) {
+      autoArmedRef.current = false;
+      stopStreaming();
+    }
+  }, [user, isConnected, motionAlertsEnabled, isStreaming, startStreaming, stopStreaming]);
 
   const value: StreamContextType = {
     isConnected,

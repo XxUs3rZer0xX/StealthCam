@@ -28,6 +28,7 @@ const MobileClient: React.FC = () => {
   const [loadingRecordings, setLoadingRecordings] = useState(false);
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
   const [recordingsError, setRecordingsError] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const loadRecordings = React.useCallback(async () => {
     if (!user) return;
@@ -44,6 +45,23 @@ const MobileClient: React.FC = () => {
       setRecordingsError(err instanceof Error ? err.message : 'Failed to load recordings');
     } finally {
       setLoadingRecordings(false);
+    }
+  }, [user]);
+
+  // Delete a recording from the archive.
+  const deleteClip = React.useCallback(async (id: string) => {
+    if (!user) return;
+    try {
+      const res = await fetch(`/api/recordings/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      if (!res.ok) throw new Error(`Delete failed (${res.status})`);
+      setRecordings((prev) => prev.filter((r) => r.id !== id));
+      setSelectedClip((cur) => (cur === id ? null : cur));
+      setConfirmDeleteId((cur) => (cur === id ? null : cur));
+    } catch (err) {
+      setRecordingsError(err instanceof Error ? err.message : 'Failed to delete recording');
     }
   }, [user]);
 
@@ -358,13 +376,22 @@ const MobileClient: React.FC = () => {
                   className="w-full bg-black"
                   style={{ borderRadius: '1rem', border: '2px solid var(--lcars-gold)' }}
                 />
-                <button
-                  onClick={() => setSelectedClip(null)}
-                  className="lcars-btn text-xs mt-2"
-                  style={{ background: 'var(--lcars-red)' }}
-                >
-                  ✕ Close
-                </button>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => setSelectedClip(null)}
+                    className="lcars-btn text-xs"
+                    style={{ background: '#2a2030' }}
+                  >
+                    ✕ Close
+                  </button>
+                  <button
+                    onClick={() => deleteClip(selectedClip)}
+                    className="lcars-btn text-xs"
+                    style={{ background: 'var(--lcars-red)' }}
+                  >
+                    🗑 Delete
+                  </button>
+                </div>
               </div>
             )}
 
@@ -388,23 +415,55 @@ const MobileClient: React.FC = () => {
               {recordings.map((rec, i) => {
                 const accent = ['var(--lcars-gold)', 'var(--lcars-lavender)', 'var(--lcars-orange)', 'var(--lcars-blue)'][i % 4];
                 const active = selectedClip === rec.id;
+                const confirming = confirmDeleteId === rec.id;
                 return (
-                  <button
+                  <div
                     key={rec.id}
-                    onClick={() => setSelectedClip(rec.id)}
-                    className="w-full flex items-center gap-3 p-2 text-left"
+                    className="w-full flex items-center gap-2 p-2"
                     style={{
                       background: active ? '#1a1a1a' : '#0d0d0d',
                       border: `2px solid ${active ? accent : '#1f1f1f'}`,
                       borderRadius: '9999px',
                     }}
                   >
-                    <span className="h-8 w-14 shrink-0" style={{ background: accent, borderRadius: '9999px' }} />
-                    <span className="flex-1 text-sm" style={{ color: 'var(--lcars-peach)', letterSpacing: '0.05em' }}>
-                      {formatClipLabel(rec.id)}
-                    </span>
-                    <span className="lcars-label pr-3" style={{ color: accent }}>{formatBytes(rec.bytes)}</span>
-                  </button>
+                    <button
+                      onClick={() => setSelectedClip(rec.id)}
+                      className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                    >
+                      <span className="h-8 w-14 shrink-0" style={{ background: accent, borderRadius: '9999px' }} />
+                      <span className="flex-1 text-sm truncate" style={{ color: 'var(--lcars-peach)', letterSpacing: '0.05em' }}>
+                        {formatClipLabel(rec.id)}
+                      </span>
+                      <span className="lcars-label" style={{ color: accent }}>{formatBytes(rec.bytes)}</span>
+                    </button>
+                    {confirming ? (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => deleteClip(rec.id)}
+                          className="lcars-btn text-xs"
+                          style={{ background: 'var(--lcars-red)', padding: '0.35rem 0.7rem' }}
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="lcars-btn text-xs"
+                          style={{ background: '#2a2030', padding: '0.35rem 0.6rem' }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(rec.id)}
+                        className="shrink-0 text-lg px-2"
+                        style={{ color: 'var(--lcars-red)' }}
+                        title="Delete recording"
+                      >
+                        🗑
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>
