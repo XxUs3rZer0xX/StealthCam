@@ -25,6 +25,12 @@ export interface StreamStoppedData {
   fromUserId: string;
 }
 
+export interface MotionData {
+  fromUserId: string;
+  score: number;
+  at: number;
+}
+
 export interface SignalingData {
   offer?: RTCSessionDescriptionInit;
   answer?: RTCSessionDescriptionInit;
@@ -124,6 +130,19 @@ export class SocketService {
   onStreamRequested(callback: (data: StreamRequestData) => void): void {
     if (this.socket) {
       this.socket.on('stream-requested', callback);
+    }
+  }
+
+  // Motion events
+  emitMotion(score: number): void {
+    if (this.socket) {
+      this.socket.emit('motion-detected', { score, at: Date.now() });
+    }
+  }
+
+  onMotionDetected(callback: (data: MotionData) => void): void {
+    if (this.socket) {
+      this.socket.on('motion-detected', callback);
     }
   }
 
