@@ -94,3 +94,7 @@ temp/
 
 # Saved camera recordings
 /recordings/
+
+# Built APK copied to project root
+/StealthCam-debug.apk
+*.apk
