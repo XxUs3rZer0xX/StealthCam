@@ -10,6 +10,7 @@ const MobileClient: React.FC = () => {
     remoteStream,
     connectionState,
     onlineDevices,
+    lastMotion,
     requestStream,
     error
   } = useStream();
@@ -18,6 +19,49 @@ const MobileClient: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [notifyPermission, setNotifyPermission] = useState<NotificationPermission>('default');
+  const [motionBanner, setMotionBanner] = useState<string | null>(null);
+  const handledMotionAt = useRef<number>(0);
+
+  // Reflect the current browser notification permission on mount.
+  useEffect(() => {
+    if (typeof Notification !== 'undefined') {
+      setNotifyPermission(Notification.permission);
+    }
+  }, []);
+
+  const enableNotifications = async () => {
+    if (typeof Notification === 'undefined') return;
+    try {
+      const result = await Notification.requestPermission();
+      setNotifyPermission(result);
+    } catch (err) {
+      console.error('Notification permission error:', err);
+    }
+  };
+
+  // When a new motion event arrives, raise a push notification + in-app banner.
+  useEffect(() => {
+    if (!lastMotion || lastMotion.at === handledMotionAt.current) return;
+    handledMotionAt.current = lastMotion.at;
+
+    const time = new Date(lastMotion.at).toLocaleTimeString();
+    setMotionBanner(`Motion detected at ${time}`);
+    const timeout = setTimeout(() => setMotionBanner(null), 8000);
+
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      try {
+        new Notification('StealthCam: motion detected', {
+          body: `Movement seen on your camera at ${time}.`,
+          tag: 'stealthcam-motion',
+        });
+      } catch (err) {
+        console.error('Failed to show notification:', err);
+      }
+    }
+
+    return () => clearTimeout(timeout);
+  }, [lastMotion]);
 
   useEffect(() => {
     if (remoteStream && remoteVideoRef.current) {
@@ -91,6 +135,15 @@ const MobileClient: React.FC = () => {
                 <div className={`w-2 h-2 rounded-full ${getConnectionStatusColor()}`}></div>
                 <span className="text-xs font-medium text-gray-300">{getConnectionStatusText()}</span>
               </div>
+              {notifyPermission !== 'granted' && (
+                <button
+                  onClick={enableNotifications}
+                  className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                  title="Allow push notifications for motion alerts"
+                >
+                  🔔 Enable alerts
+                </button>
+              )}
               <button
                 onClick={logout}
                 className="px-3 py-1 text-xs font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
@@ -210,6 +263,15 @@ const MobileClient: React.FC = () => {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {motionBanner && (
+        <div className="fixed top-16 left-4 right-4 z-50">
+          <div className="bg-amber-500 text-black p-3 rounded-lg shadow-lg flex items-center space-x-2 animate-pulse">
+            <span className="text-lg">🚨</span>
+            <p className="text-sm font-semibold">{motionBanner}</p>
           </div>
         </div>
       )}

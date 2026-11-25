@@ -112,6 +112,17 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
           fromUserId: authSocket.userId,
           fromDeviceType: authSocket.deviceType
         });
+      });
+
+      // Motion alert: relay a detection from the camera to the user's other
+      // devices (their phone) so it can raise a notification.
+      socket.on('motion-detected', (data) => {
+        console.log(`Motion detected by ${authSocket.deviceType} for ${authSocket.userId}`);
+        socket.to(authSocket.userId).emit('motion-detected', {
+          fromUserId: authSocket.userId,
+          score: typeof data?.score === 'number' ? data.score : 0,
+          at: typeof data?.at === 'number' ? data.at : Date.now()
+        });
       });      // Connection management
       socket.on('get-online-devices', () => {
         const clients = Array.from(io.sockets.sockets.values())          .filter((s) => {

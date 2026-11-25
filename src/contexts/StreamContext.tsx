@@ -4,14 +4,20 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useRe
 import { useAuth } from './AuthContext';
 import { socketService } from '@/lib/socket';
 import { WebRTCService } from '@/lib/webrtc';
+import { StreamRecorder } from '@/lib/recorder';
+import { MotionDetector } from '@/lib/motion';
 
 export interface StreamContextType {
   isConnected: boolean;
   isStreaming: boolean;
+  isRecording: boolean;
   remoteStream: MediaStream | null;
   localStream: MediaStream | null;
   connectionState: RTCPeerConnectionState | null;
   onlineDevices: { socketId: string; deviceType: string; connected: boolean }[];
+  motionAlertsEnabled: boolean;
+  setMotionAlertsEnabled: (enabled: boolean) => void;
+  lastMotion: { at: number; score: number } | null;
   startStreaming: () => Promise<void>;
   stopStreaming: () => void;
   requestStream: () => void;
@@ -43,7 +49,45 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
   const [connectionState, setConnectionState] = useState<RTCPeerConnectionState | null>(null);
   const [onlineDevices, setOnlineDevices] = useState<{ socketId: string; deviceType: string; connected: boolean }[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [motionAlertsEnabled, setMotionAlertsEnabled] = useState(true);
+  const [lastMotion, setLastMotion] = useState<{ at: number; score: number } | null>(null);
   const webrtcRef = useRef<WebRTCService | null>(null);
+
+  // Record the local camera stream to disk whenever the computer client is streaming
+  useEffect(() => {
+    if (!localStream || !user || user.deviceType !== 'computer') return;
+
+    const recorder = new StreamRecorder(user.token);
+    recorder.onError((message) => setError(`Recording: ${message}`));
+    try {
+      recorder.start(localStream);
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      setError(error instanceof Error ? error.message : 'Failed to start recording');
+    }
+
+    return () => {
+      recorder.stop();
+      setIsRecording(false);
+    };
+  }, [localStream, user]);
+
+  // Watch the local camera for motion (computer client only) and alert the phone.
+  useEffect(() => {
+    if (!localStream || !user || user.deviceType !== 'computer' || !motionAlertsEnabled) return;
+
+    const detector = new MotionDetector();
+    detector.onMotion((score) => {
+      socketService.emitMotion(score);
+    });
+    detector.start(localStream).catch((err) => {
+      console.error('Error starting motion detection:', err);
+    });
+
+    return () => detector.stop();
+  }, [localStream, user, motionAlertsEnabled]);
 
   const startStreaming = useCallback(async () => {
     if (!webrtcRef.current || !user) return;
@@ -112,6 +156,11 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
         if (user.deviceType === 'computer') {
           startStreaming();
         }
+      });
+
+      socketService.onMotionDetected((data) => {
+        console.log('Motion detected at', new Date(data.at).toLocaleTimeString());
+        setLastMotion({ at: data.at, score: data.score });
       });      socketService.onDeviceConnected((data) => {
         console.log('Device connected:', data);
         setOnlineDevices(prev => {
@@ -183,10 +232,14 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
   const value: StreamContextType = {
     isConnected,
     isStreaming,
+    isRecording,
     remoteStream,
     localStream,
     connectionState,
     onlineDevices,
+    motionAlertsEnabled,
+    setMotionAlertsEnabled,
+    lastMotion,
     startStreaming,
     stopStreaming,
     requestStream,

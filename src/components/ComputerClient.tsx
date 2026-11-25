@@ -9,9 +9,12 @@ const ComputerClient: React.FC = () => {
   const {
     isConnected,
     isStreaming,
+    isRecording,
     localStream,
     connectionState,
     onlineDevices,
+    motionAlertsEnabled,
+    setMotionAlertsEnabled,
     startStreaming,
     stopStreaming,
     error
@@ -144,6 +147,12 @@ const ComputerClient: React.FC = () => {
                           <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                           <span className="text-sm font-medium">LIVE</span>
                         </div>
+                        {isRecording && (
+                          <div className="mt-2 flex items-center space-x-2 bg-gray-900 bg-opacity-75 text-white px-3 py-1 rounded-full">
+                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <span className="text-sm font-medium">REC</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -274,12 +283,35 @@ const ComputerClient: React.FC = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Connection:</span>
                       <span className={`text-sm font-medium ${
-                        connectionState === 'connected' ? 'text-green-600' : 
+                        connectionState === 'connected' ? 'text-green-600' :
                         connectionState === 'connecting' ? 'text-yellow-600' : 'text-gray-500'
                       }`}>
                         {connectionState || 'Not connected'}
                       </span>
                     </div>
+
+                    <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                      <span className="text-sm text-gray-600">Motion alerts:</span>
+                      <button
+                        onClick={() => setMotionAlertsEnabled(!motionAlertsEnabled)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          motionAlertsEnabled ? 'bg-green-600' : 'bg-gray-300'
+                        }`}
+                        title="Notify the phone when the camera sees movement"
+                        aria-pressed={motionAlertsEnabled}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            motionAlertsEnabled ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    {motionAlertsEnabled && !isStreaming && (
+                      <p className="text-xs text-gray-400">
+                        Start the stream to begin watching for motion.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
