@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStream } from '@/contexts/StreamContext';
+import { registerPushNotifications } from '@/lib/push';
 
 const MobileClient: React.FC = () => {
   const { user, logout } = useAuth();  const {
@@ -73,7 +74,24 @@ const MobileClient: React.FC = () => {
     }
   }, []);
 
+  // On the native Android app, register for FCM background push so motion
+  // alerts arrive even when the app is closed. No-op in a plain browser.
+  useEffect(() => {
+    if (user?.token) {
+      registerPushNotifications(user.token).catch((err) =>
+        console.error('Push registration failed:', err)
+      );
+    }
+  }, [user?.token]);
+
   const enableNotifications = async () => {
+    // Native app: this drives the Android FCM permission + registration.
+    if (user?.token) {
+      registerPushNotifications(user.token).catch((err) =>
+        console.error('Push registration failed:', err)
+      );
+    }
+    // Browser: fall back to the Web Notifications permission.
     if (typeof Notification === 'undefined') return;
     try {
       const result = await Notification.requestPermission();

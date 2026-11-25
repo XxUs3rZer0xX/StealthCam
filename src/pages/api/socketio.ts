@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { Server as IOServer } from 'socket.io';
 import { Server as NetServer } from 'http';
 import jwt from 'jsonwebtoken';
+import { sendMotionPush } from '@/lib/motionPush';
 
 type SocketServer = NetServer & {
   io?: IOServer;
@@ -118,11 +119,18 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
       // devices (their phone) so it can raise a notification.
       socket.on('motion-detected', (data) => {
         console.log(`Motion detected by ${authSocket.deviceType} for ${authSocket.userId}`);
+        const at = typeof data?.at === 'number' ? data.at : Date.now();
+        // Relay to any of the user's devices that are connected right now.
         socket.to(authSocket.userId).emit('motion-detected', {
           fromUserId: authSocket.userId,
           score: typeof data?.score === 'number' ? data.score : 0,
-          at: typeof data?.at === 'number' ? data.at : Date.now()
+          at
         });
+        // Also push to the phone(s) so they're alerted even when the app is
+        // closed or asleep. Fire-and-forget; never block the socket handler.
+        sendMotionPush(authSocket.userId, at).catch((err) =>
+          console.error('Motion push error:', err)
+        );
       });      // Connection management
       socket.on('get-online-devices', () => {
         const clients = Array.from(io.sockets.sockets.values())          .filter((s) => {

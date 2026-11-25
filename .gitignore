@@ -98,3 +98,8 @@ temp/
 # Built APK copied to project root
 /StealthCam-debug.apk
 *.apk
+
+# Push notifications (secrets / runtime)
+firebase-service-account.json
+/push-tokens.json
+android/app/google-services.json
