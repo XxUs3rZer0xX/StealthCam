@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useRe
 import { useAuth } from './AuthContext';
 import { socketService } from '@/lib/socket';
 import { WebRTCService } from '@/lib/webrtc';
-import { StreamRecorder } from '@/lib/recorder';
+import { ClipRecorder } from '@/lib/recorder';
 import { MotionDetector } from '@/lib/motion';
 
 export interface StreamContextType {
@@ -54,39 +54,35 @@ export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
   const [lastMotion, setLastMotion] = useState<{ at: number; score: number } | null>(null);
   const webrtcRef = useRef<WebRTCService | null>(null);
 
-  // Record the local camera stream to disk whenever the computer client is streaming
-  useEffect(() => {
-    if (!localStream || !user || user.deviceType !== 'computer') return;
-
-    const recorder = new StreamRecorder(user.token);
-    recorder.onError((message) => setError(`Recording: ${message}`));
-    try {
-      recorder.start(localStream);
-      setIsRecording(true);
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      setError(error instanceof Error ? error.message : 'Failed to start recording');
-    }
-
-    return () => {
-      recorder.stop();
-      setIsRecording(false);
-    };
-  }, [localStream, user]);
-
-  // Watch the local camera for motion (computer client only) and alert the phone.
+  // Computer client: watch the local camera for motion. On each motion window
+  // we (a) alert the phone and (b) record a short, self-contained clip to disk.
   useEffect(() => {
     if (!localStream || !user || user.deviceType !== 'computer' || !motionAlertsEnabled) return;
+
+    const recorder = new ClipRecorder(user.token);
+    recorder.onError((message) => setError(`Recording: ${message}`));
 
     const detector = new MotionDetector();
     detector.onMotion((score) => {
       socketService.emitMotion(score);
     });
+    detector.onMotionStart(() => {
+      recorder.startClip(localStream);
+      setIsRecording(true);
+    });
+    detector.onMotionEnd(() => {
+      recorder.stopClip();
+      setIsRecording(false);
+    });
     detector.start(localStream).catch((err) => {
       console.error('Error starting motion detection:', err);
     });
 
-    return () => detector.stop();
+    return () => {
+      detector.stop();   // flushes an open window -> stops + uploads the clip
+      recorder.stopClip();
+      setIsRecording(false);
+    };
   }, [localStream, user, motionAlertsEnabled]);
 
   const startStreaming = useCallback(async () => {

@@ -91,3 +91,6 @@ pids
 # Temporary folders
 tmp/
 temp/
+
+# Saved camera recordings
+/recordings/

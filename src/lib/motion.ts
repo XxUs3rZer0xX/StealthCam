@@ -17,8 +17,10 @@ export interface MotionDetectorOptions {
   pixelThreshold?: number;
   /** Fraction of changed pixels (0-1) needed to call it motion. */
   motionThreshold?: number;
-  /** Minimum gap between motion events, in ms. */
+  /** Minimum gap between motion alert events, in ms. */
   cooldownMs?: number;
+  /** How long motion must be quiet before a motion window is considered over, in ms. */
+  postMotionMs?: number;
 }
 
 export class MotionDetector {
@@ -28,8 +30,12 @@ export class MotionDetector {
   private prev: Uint8ClampedArray | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastTrigger = 0;
+  private active = false;
+  private lastActive = 0;
   private opts: Required<MotionDetectorOptions>;
   private motionCb: ((score: number) => void) | null = null;
+  private motionStartCb: (() => void) | null = null;
+  private motionEndCb: (() => void) | null = null;
 
   constructor(options: MotionDetectorOptions = {}) {
     this.opts = {
@@ -39,6 +45,7 @@ export class MotionDetector {
       pixelThreshold: options.pixelThreshold ?? 25,
       motionThreshold: options.motionThreshold ?? 0.04,
       cooldownMs: options.cooldownMs ?? 15000,
+      postMotionMs: options.postMotionMs ?? 6000,
     };
 
     this.video = document.createElement('video');
@@ -54,9 +61,19 @@ export class MotionDetector {
     this.ctx = ctx;
   }
 
-  /** Register the callback invoked when motion crosses the threshold. */
+  /** Register the callback invoked when motion crosses the threshold (edge, rate-limited by cooldown). */
   onMotion(cb: (score: number) => void): void {
     this.motionCb = cb;
+  }
+
+  /** Fired once when a motion window begins (used to start recording). */
+  onMotionStart(cb: () => void): void {
+    this.motionStartCb = cb;
+  }
+
+  /** Fired once when a motion window ends after `postMotionMs` of quiet (used to stop recording). */
+  onMotionEnd(cb: () => void): void {
+    this.motionEndCb = cb;
   }
 
   /** Begin analysing the given stream. Resolves once the hidden video is playing. */
@@ -89,12 +106,23 @@ export class MotionDetector {
       }
 
       const score = changed / total;
+      const now = Date.now();
       if (score > motionThreshold) {
-        const now = Date.now();
+        this.lastActive = now;
+        // Open a motion window on the rising edge.
+        if (!this.active) {
+          this.active = true;
+          this.motionStartCb?.();
+        }
+        // Rate-limited alert edge.
         if (now - this.lastTrigger > cooldownMs) {
           this.lastTrigger = now;
           this.motionCb?.(score);
         }
+      } else if (this.active && now - this.lastActive > this.opts.postMotionMs) {
+        // Close the window once things have been quiet long enough.
+        this.active = false;
+        this.motionEndCb?.();
       }
     }
 
@@ -106,6 +134,11 @@ export class MotionDetector {
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
+    }
+    // Flush an open motion window so any in-progress recording gets closed.
+    if (this.active) {
+      this.active = false;
+      this.motionEndCb?.();
     }
     this.video.srcObject = null;
     this.prev = null;

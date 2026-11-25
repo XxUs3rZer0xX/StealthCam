@@ -23,6 +23,49 @@ const MobileClient: React.FC = () => {
   const [motionBanner, setMotionBanner] = useState<string | null>(null);
   const handledMotionAt = useRef<number>(0);
 
+  const [viewMode, setViewMode] = useState<'live' | 'recordings'>('live');
+  const [recordings, setRecordings] = useState<{ id: string; bytes: number; mtime: number }[]>([]);
+  const [loadingRecordings, setLoadingRecordings] = useState(false);
+  const [selectedClip, setSelectedClip] = useState<string | null>(null);
+  const [recordingsError, setRecordingsError] = useState<string | null>(null);
+
+  const loadRecordings = React.useCallback(async () => {
+    if (!user) return;
+    setLoadingRecordings(true);
+    setRecordingsError(null);
+    try {
+      const res = await fetch('/api/recordings', {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      if (!res.ok) throw new Error(`Failed to load recordings (${res.status})`);
+      const data = await res.json();
+      setRecordings(data.recordings || []);
+    } catch (err) {
+      setRecordingsError(err instanceof Error ? err.message : 'Failed to load recordings');
+    } finally {
+      setLoadingRecordings(false);
+    }
+  }, [user]);
+
+  // Refresh the list whenever the Recordings tab is opened or a new motion event lands.
+  useEffect(() => {
+    if (viewMode === 'recordings') loadRecordings();
+  }, [viewMode, lastMotion, loadRecordings]);
+
+  // Turn a recording id (2026-11-24_20-29-43-480) into a readable label.
+  const formatClipLabel = (id: string): string => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})-\d{3}$/.exec(id);
+    if (!m) return id;
+    const [, y, mo, d, h, min, s] = m;
+    return `${y}-${mo}-${d}  ${h}:${min}:${s}`;
+  };
+
+  const formatBytes = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   // Reflect the current browser notification permission on mount.
   useEffect(() => {
     if (typeof Notification !== 'undefined') {
@@ -131,6 +174,24 @@ const MobileClient: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center space-x-3">
+              <div className="flex rounded-md overflow-hidden border border-gray-600">
+                <button
+                  onClick={() => setViewMode('live')}
+                  className={`px-3 py-1 text-xs font-medium transition-colors ${
+                    viewMode === 'live' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'
+                  }`}
+                >
+                  Live
+                </button>
+                <button
+                  onClick={() => setViewMode('recordings')}
+                  className={`px-3 py-1 text-xs font-medium transition-colors ${
+                    viewMode === 'recordings' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'
+                  }`}
+                >
+                  Recordings
+                </button>
+              </div>
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${getConnectionStatusColor()}`}></div>
                 <span className="text-xs font-medium text-gray-300">{getConnectionStatusText()}</span>
@@ -155,6 +216,7 @@ const MobileClient: React.FC = () => {
         </div>
       </header>
 
+      {viewMode === 'live' && (
       <div className="relative">
         {/* Video Player */}
         <div className="relative bg-black">
@@ -249,9 +311,79 @@ const MobileClient: React.FC = () => {
           </div>
         )}
       </div>
+      )}
+
+      {viewMode === 'recordings' && (
+        <div className="p-4 pb-24 min-h-screen">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium text-white">Motion Recordings</h2>
+            <button
+              onClick={loadRecordings}
+              className="px-3 py-1 text-xs font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
+            >
+              ↻ Refresh
+            </button>
+          </div>
+
+          {selectedClip && (
+            <div className="mb-4">
+              <video
+                key={selectedClip}
+                src={`/api/recordings/${selectedClip}?token=${encodeURIComponent(user?.token || '')}`}
+                controls
+                autoPlay
+                playsInline
+                className="w-full rounded-lg bg-black"
+              />
+              <button
+                onClick={() => setSelectedClip(null)}
+                className="mt-2 text-xs text-gray-400 hover:text-gray-200"
+              >
+                ✕ Close player
+              </button>
+            </div>
+          )}
+
+          {loadingRecordings && (
+            <p className="text-sm text-gray-400">Loading…</p>
+          )}
+          {recordingsError && (
+            <p className="text-sm text-red-400">{recordingsError}</p>
+          )}
+          {!loadingRecordings && !recordingsError && recordings.length === 0 && (
+            <div className="text-center py-10">
+              <div className="text-5xl mb-3">🎞️</div>
+              <p className="text-sm text-gray-400">No motion recordings yet.</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Clips appear here when the camera detects movement.
+              </p>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {recordings.map((rec) => (
+              <button
+                key={rec.id}
+                onClick={() => setSelectedClip(rec.id)}
+                className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors text-left ${
+                  selectedClip === rec.id
+                    ? 'bg-blue-900/40 border-blue-600'
+                    : 'bg-gray-800 border-gray-700 hover:bg-gray-700'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="text-xl">🎥</span>
+                  <span className="text-sm font-medium text-white">{formatClipLabel(rec.id)}</span>
+                </div>
+                <span className="text-xs text-gray-400">{formatBytes(rec.bytes)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Connection Status */}
-      {computerDevices.length === 0 && (
+      {viewMode === 'live' && computerDevices.length === 0 && (
         <div className="fixed bottom-4 left-4 right-4">
           <div className="bg-yellow-600 bg-opacity-90 text-white p-3 rounded-lg">
             <div className="flex items-center space-x-2">

@@ -291,13 +291,13 @@ const ComputerClient: React.FC = () => {
                     </div>
 
                     <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                      <span className="text-sm text-gray-600">Motion alerts:</span>
+                      <span className="text-sm text-gray-600">Motion alerts &amp; recording:</span>
                       <button
                         onClick={() => setMotionAlertsEnabled(!motionAlertsEnabled)}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                           motionAlertsEnabled ? 'bg-green-600' : 'bg-gray-300'
                         }`}
-                        title="Notify the phone when the camera sees movement"
+                        title="When the camera sees movement: alert the phone and record a clip"
                         aria-pressed={motionAlertsEnabled}
                       >
                         <span
@@ -309,7 +309,7 @@ const ComputerClient: React.FC = () => {
                     </div>
                     {motionAlertsEnabled && !isStreaming && (
                       <p className="text-xs text-gray-400">
-                        Start the stream to begin watching for motion.
+                        Start the stream to begin watching for motion. Clips record only while motion is seen.
                       </p>
                     )}
                   </div>
@@ -325,7 +325,7 @@ const ComputerClient: React.FC = () => {
                   <ul className="text-xs text-blue-700 space-y-1">
                     <li>1. Ensure your mobile device is connected</li>
                     <li>2. Select your preferred stream quality</li>
-                    <li>3. Click "Start Stream" to begin</li>
+                    <li>3. Click &quot;Start Stream&quot; to begin</li>
                     <li>4. Mobile device can control the stream</li>
                   </ul>
                 </div>
