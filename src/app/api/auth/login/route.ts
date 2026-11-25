@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-
-// In a real application, this would be stored in a database
-const users: { [key: string]: { id: string; username: string; password: string; } } = {};
+import { findUserByUsername, createUser } from '@/lib/users';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,8 +27,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user exists
-    const existingUser = Object.values(users).find(user => user.username === username);
-    
+    const existingUser = await findUserByUsername(username);
+
     if (existingUser) {
       console.log(`Existing user found: ${existingUser.id}`);
       // Verify password
@@ -62,14 +60,14 @@ export async function POST(request: NextRequest) {
       // Create new user
       const hashedPassword = await bcrypt.hash(password, 12);
       const userId = uuidv4();
-      
-      users[userId] = {
+
+      await createUser({
         id: userId,
         username,
         password: hashedPassword
-      };
+      });
 
-      console.log(`New user created: ${userId}, total users: ${Object.keys(users).length}`);
+      console.log(`New user created and persisted: ${userId}`);
 
       // Generate JWT token
       const token = jwt.sign(

@@ -45,104 +45,91 @@ const LoginForm: React.FC = () => {
   }, [username, password, error, clearError]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            StealthCam 🕵️‍♂️
-          </h1>
-          <p className="text-gray-600">
-            Remote surveillance monitoring tool
-          </p>
+    <div className="min-h-screen flex items-center justify-center bg-black p-4">
+      <div className="max-w-md w-full">
+        {/* Top elbow bar */}
+        <div className="flex items-end gap-2 mb-1">
+          <div className="lcars-sweep h-10 w-24 rounded-tr-none" style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }} />
+          <div className="flex-1 h-5" style={{ background: 'var(--lcars-lavender)', borderRadius: '9999px' }} />
+          <div className="h-5 w-10" style={{ background: 'var(--lcars-blue)', borderRadius: '9999px' }} />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter your username"
-              required
-            />
+        <div className="lcars-panel p-6 pt-5">
+          <div className="mb-6">
+            <h1 className="lcars-heading text-3xl">StealthCam</h1>
+            <p className="lcars-label mt-1" style={{ color: 'var(--lcars-peach)' }}>
+              LCARS · Remote Surveillance Interface
+            </p>
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter your password"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Device Type
-            </label>
-            <div className="flex space-x-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="computer"
-                  checked={deviceType === 'computer'}
-                  onChange={(e) => setDeviceType(e.target.value as 'computer' | 'mobile')}
-                  className="mr-2"
-                />
-                <span className="text-sm">Computer (Streamer)</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="mobile"
-                  checked={deviceType === 'mobile'}
-                  onChange={(e) => setDeviceType(e.target.value as 'computer' | 'mobile')}
-                  className="mr-2"
-                />
-                <span className="text-sm">Mobile (Viewer)</span>
-              </label>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="username" className="lcars-label block mb-2">Username</label>
+              <input
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="lcars-input"
+                placeholder="ENTER USERNAME"
+                required
+              />
             </div>
-          </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-red-600 text-sm">{error}</p>
+            <div>
+              <label htmlFor="password" className="lcars-label block mb-2">Access Code</label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="lcars-input"
+                placeholder="ENTER ACCESS CODE"
+                required
+              />
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting || !username || !password}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isSubmitting ? 'Connecting...' : 'Connect'}
-          </button>
-        </form>
+            <div>
+              <label className="lcars-label block mb-2">Station Role</label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDeviceType('computer')}
+                  className="lcars-btn flex-1"
+                  style={{ background: deviceType === 'computer' ? 'var(--lcars-gold)' : '#3a3320' }}
+                >
+                  Camera (PC)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeviceType('mobile')}
+                  className="lcars-btn flex-1"
+                  style={{ background: deviceType === 'mobile' ? 'var(--lcars-blue)' : '#1f2a33' }}
+                >
+                  Viewer (Phone)
+                </button>
+              </div>
+            </div>
 
-        <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500">
-            New users will be automatically registered
+            {error && (
+              <div className="p-3" style={{ background: '#2a1414', border: '2px solid var(--lcars-red)', borderRadius: '9999px' }}>
+                <p className="text-sm" style={{ color: 'var(--lcars-red)' }}>⚠ {error}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitting || !username || !password}
+              className="lcars-btn w-full text-lg"
+              style={{ background: 'var(--lcars-orange)' }}
+            >
+              {isSubmitting ? 'Engaging…' : 'Engage'}
+            </button>
+          </form>
+
+          <p className="lcars-label mt-5 text-center" style={{ color: 'var(--lcars-purple)' }}>
+            New operators are auto-registered · use the same login on both stations
           </p>
-        </div>
-
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-900 mb-2">How it works:</h3>
-          <ul className="text-xs text-gray-600 space-y-1">
-            <li>• <strong>Computer:</strong> Captures and streams video/audio</li>
-            <li>• <strong>Mobile:</strong> Views the stream and controls it</li>
-            <li>• Use the same username on both devices</li>
-            <li>• Streams are encrypted and secure</li>
-          </ul>
         </div>
       </div>
     </div>

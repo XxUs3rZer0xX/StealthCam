@@ -88,31 +88,28 @@ const ComputerClient: React.FC = () => {
         </div>
       )}
 
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div>                <h1 className="text-xl font-semibold text-gray-900">
-                  StealthCam - Computer 🕵️‍♂️
-                </h1>
-                <p className="text-sm text-gray-500">
-                  Welcome, {user?.username}
-                </p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <div className={`w-3 h-3 rounded-full ${getConnectionStatusColor()}`}></div>
-                  <span className="text-sm font-medium">{getConnectionStatusText()}</span>
-                </div>
-                <button
-                  onClick={logout}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Logout
-                </button>
-              </div>
+      <div className="min-h-screen bg-black">
+        {/* LCARS command bar */}
+        <header className="bg-black px-4 pt-3 pb-2">
+          <div className="max-w-7xl mx-auto flex items-center gap-3">
+            <div className="lcars-sweep h-9 px-4 flex items-center" style={{ borderRadius: '9999px 0 0 9999px' }}>
+              <span className="text-black font-bold tracking-widest text-sm">LCARS</span>
             </div>
+            <div className="flex-1">
+              <h1 className="lcars-heading text-lg leading-none">StealthCam · Camera Station</h1>
+              <p className="lcars-label mt-1" style={{ color: 'var(--lcars-purple)' }}>Operator: {user?.username}</p>
+            </div>
+            <div className="flex items-center gap-2 px-3 h-8" style={{ background: '#141414', borderRadius: '9999px' }}>
+              <span className={`w-3 h-3 rounded-full lcars-blink ${getConnectionStatusColor()}`} />
+              <span className="lcars-label" style={{ color: 'var(--lcars-peach)' }}>{getConnectionStatusText()}</span>
+            </div>
+            <button
+              onClick={logout}
+              className="lcars-btn text-xs"
+              style={{ background: 'var(--lcars-red)' }}
+            >
+              Logout
+            </button>
           </div>
         </header>
 
@@ -120,9 +117,9 @@ const ComputerClient: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Video Preview */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-sm border">
+              <div className="lcars-panel">
                 <div className="p-6">
-                  <h2 className="text-lg font-medium text-gray-900 mb-4">
+                  <h2 className="text-lg font-medium text-[#ffcc99] mb-4">
                     Video Preview
                   </h2>
                   
@@ -160,14 +157,14 @@ const ComputerClient: React.FC = () => {
                   {/* Stream Controls */}
                   <div className="mt-6 flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="lcars-label block mb-2">
                         Stream Quality
                       </label>
                       <select
                         value={streamQuality}
                         onChange={(e) => setStreamQuality(e.target.value as 'low' | 'medium' | 'high')}
                         disabled={isStreaming}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="lcars-input"
                       >
                         <option value="low">Low (640x480, 15fps)</option>
                         <option value="medium">Medium (1280x720, 30fps)</option>
@@ -180,14 +177,16 @@ const ComputerClient: React.FC = () => {
                         <button
                           onClick={handleStartStream}
                           disabled={!isConnected}
-                          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="lcars-btn"
+                          style={{ background: 'var(--lcars-gold)' }}
                         >
                           Start Stream
                         </button>
                       ) : (
                         <button
                           onClick={stopStreaming}
-                          className="px-6 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                          className="lcars-btn"
+                          style={{ background: 'var(--lcars-red)' }}
                         >
                           Stop Stream
                         </button>
@@ -199,7 +198,8 @@ const ComputerClient: React.FC = () => {
                   <div className="mt-4">
                     <button
                       onClick={toggleGhostMode}
-                      className="w-full px-4 py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg font-medium hover:border-gray-400 hover:text-gray-600 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors flex items-center justify-center space-x-2"
+                      className="lcars-btn w-full flex items-center justify-center space-x-2"
+                      style={{ background: 'var(--lcars-purple)' }}
                       title="Enable Ghost Mode - Press ESC to exit"
                     >
                       <span>👻</span>
@@ -219,21 +219,21 @@ const ComputerClient: React.FC = () => {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Connected Devices */}
-              <div className="bg-white rounded-lg shadow-sm border">
+              <div className="lcars-panel">
                 <div className="p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  <h3 className="text-lg font-medium text-[#ffcc99] mb-4">
                     Connected Mobile Devices
                   </h3>
                   
                   {mobileDevices.length === 0 ? (
                     <div className="text-center py-6">
-                      <div className="text-gray-400 mb-2">
+                      <div className="text-[#9977aa] mb-2">
                         📱
                       </div>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-[#9977aa]">
                         No mobile devices connected
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-[#9977aa] mt-1">
                         Login with the same username on your mobile device
                       </p>
                     </div>
@@ -242,15 +242,16 @@ const ComputerClient: React.FC = () => {
                       {mobileDevices.map((device, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"
+                          className="flex items-center justify-between p-3"
+                          style={{ background: '#0d0d0d', border: '2px solid var(--lcars-blue)', borderRadius: '9999px' }}
                         >
-                          <div className="flex items-center space-x-3">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-sm font-medium text-gray-900">
-                              Mobile Device
+                          <div className="flex items-center space-x-3 pl-2">
+                            <div className="w-2.5 h-2.5 rounded-full lcars-blink" style={{ background: 'var(--lcars-blue)' }}></div>
+                            <span className="text-sm font-medium" style={{ color: 'var(--lcars-peach)' }}>
+                              Viewer Device
                             </span>
                           </div>
-                          <span className="text-xs text-green-600">Connected</span>
+                          <span className="lcars-label pr-2" style={{ color: 'var(--lcars-blue)' }}>Linked</span>
                         </div>
                       ))}
                     </div>
@@ -259,39 +260,39 @@ const ComputerClient: React.FC = () => {
               </div>
 
               {/* Stream Status */}
-              <div className="bg-white rounded-lg shadow-sm border">
+              <div className="lcars-panel">
                 <div className="p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  <h3 className="text-lg font-medium text-[#ffcc99] mb-4">
                     Stream Status
                   </h3>
                   
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Status:</span>
-                      <span className={`text-sm font-medium ${isStreaming ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span className="text-sm text-[#ffcc99]">Status:</span>
+                      <span className={`text-sm font-medium ${isStreaming ? 'text-green-600' : 'text-[#9977aa]'}`}>
                         {isStreaming ? 'Streaming' : 'Stopped'}
                       </span>
                     </div>
                     
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Quality:</span>
-                      <span className="text-sm font-medium text-gray-900 capitalize">
+                      <span className="text-sm text-[#ffcc99]">Quality:</span>
+                      <span className="text-sm font-medium text-[#ffcc99] capitalize">
                         {streamQuality}
                       </span>
                     </div>
                     
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Connection:</span>
+                      <span className="text-sm text-[#ffcc99]">Connection:</span>
                       <span className={`text-sm font-medium ${
                         connectionState === 'connected' ? 'text-green-600' :
-                        connectionState === 'connecting' ? 'text-yellow-600' : 'text-gray-500'
+                        connectionState === 'connecting' ? 'text-yellow-600' : 'text-[#9977aa]'
                       }`}>
                         {connectionState || 'Not connected'}
                       </span>
                     </div>
 
                     <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                      <span className="text-sm text-gray-600">Motion alerts &amp; recording:</span>
+                      <span className="text-sm text-[#ffcc99]">Motion alerts &amp; recording:</span>
                       <button
                         onClick={() => setMotionAlertsEnabled(!motionAlertsEnabled)}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -308,7 +309,7 @@ const ComputerClient: React.FC = () => {
                       </button>
                     </div>
                     {motionAlertsEnabled && !isStreaming && (
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-[#9977aa]">
                         Start the stream to begin watching for motion. Clips record only while motion is seen.
                       </p>
                     )}
@@ -317,16 +318,16 @@ const ComputerClient: React.FC = () => {
               </div>
 
               {/* Instructions */}
-              <div className="bg-blue-50 rounded-lg border border-blue-200">
+              <div className="lcars-panel" style={{ borderColor: 'var(--lcars-blue)' }}>
                 <div className="p-6">
-                  <h3 className="text-sm font-medium text-blue-900 mb-2">
-                    How to use:
+                  <h3 className="lcars-heading text-sm mb-2" style={{ color: 'var(--lcars-blue)' }}>
+                    Operating procedure
                   </h3>
-                  <ul className="text-xs text-blue-700 space-y-1">
-                    <li>1. Ensure your mobile device is connected</li>
+                  <ul className="text-xs space-y-1" style={{ color: 'var(--lcars-peach)' }}>
+                    <li>1. Ensure your viewer device is connected</li>
                     <li>2. Select your preferred stream quality</li>
                     <li>3. Click &quot;Start Stream&quot; to begin</li>
-                    <li>4. Mobile device can control the stream</li>
+                    <li>4. The phone connects and alerts on motion</li>
                   </ul>
                 </div>
               </div>

@@ -103,3 +103,4 @@ temp/
 firebase-service-account.json
 /push-tokens.json
 android/app/google-services.json
+/users.json

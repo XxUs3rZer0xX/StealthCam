@@ -1,19 +1,193 @@
+@import url('https://fonts.googleapis.com/css2?family=Antonio:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/* ──────────────────────────────────────────────────────────────
+   LCARS theme — the Star Trek: TNG computer console look.
+   Black background, glowing amber/lavender/blue pill panels,
+   condensed uppercase "Antonio" lettering.
+   ────────────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --background: #000000;
+  --foreground: #ffcc99;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --lcars-black:    #000000;
+  --lcars-gold:     #ffcc66;
+  --lcars-orange:   #ff9966;
+  --lcars-lavender: #cc99cc;
+  --lcars-blue:     #99ccff;
+  --lcars-red:      #cc6666;
+  --lcars-peach:    #ffcc99;
+  --lcars-purple:   #9977aa;
 }
 
 body {
-  background: var(--background);
+  background: var(--lcars-black);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', Arial, sans-serif;
+  letter-spacing: 0.04em;
+}
+
+/* Rounded pill — the LCARS primitive */
+.lcars-pill { border-radius: 9999px; }
+
+/* Buttons: solid colour block, black uppercase text, brighten on hover */
+.lcars-btn {
+  font-family: 'Antonio', 'Arial Narrow', sans-serif;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #000;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.55rem 1.4rem;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.05s ease;
+  line-height: 1.1;
+}
+.lcars-btn:hover:not(:disabled)  { filter: brightness(1.15); }
+.lcars-btn:active:not(:disabled) { transform: scale(0.97); }
+.lcars-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Inputs */
+.lcars-input {
+  font-family: 'Antonio', 'Arial Narrow', sans-serif;
+  background: #141414;
+  border: 2px solid var(--lcars-gold);
+  border-radius: 9999px;
+  color: var(--lcars-peach);
+  padding: 0.6rem 1.1rem;
+  width: 100%;
+  letter-spacing: 0.05em;
+  outline: none;
+}
+.lcars-input:focus {
+  border-color: var(--lcars-orange);
+  box-shadow: 0 0 0 2px rgba(255, 153, 102, 0.3);
+}
+.lcars-input::placeholder { color: #8a6a4a; }
+
+.lcars-label {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  color: var(--lcars-lavender);
+  font-weight: 600;
+}
+
+.lcars-heading {
+  font-family: 'Antonio', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: var(--lcars-gold);
+}
+
+/* A framed panel with the signature left/top elbow sweep */
+.lcars-panel {
+  background: #0a0a0a;
+  border-radius: 1.4rem;
+  border: 2px solid #222;
+}
+
+.lcars-sweep {
+  background: var(--lcars-gold);
+  border-top-left-radius: 2.6rem;
+  border-bottom-left-radius: 2.6rem;
+}
+
+/* Blinking status dot */
+@keyframes lcars-blink { 0%, 60% { opacity: 1; } 61%, 100% { opacity: 0.25; } }
+.lcars-blink { animation: lcars-blink 1.4s steps(1) infinite; }
+
+/* ──────────────────────────────────────────────────────────────
+   Full-screen LCARS frame: left colour rail sweeping into a top
+   bar via a rounded elbow, content inset to the right.
+   ────────────────────────────────────────────────────────────── */
+.lcars-frame {
+  min-height: 100vh;
+  background: #000;
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  grid-template-rows: 54px 1fr;
+  grid-template-areas: "elbow top" "rail main";
+  gap: 5px;
+  padding: 5px;
+}
+
+/* The top-left corner piece — convex outer corner, concave inner notch */
+.lcars-elbow-top {
+  grid-area: elbow;
+  background: var(--lcars-gold);
+  border-top-left-radius: 2.4rem;
+  position: relative;
+}
+.lcars-elbow-top::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: #000;
+  border-top-left-radius: 1.5rem;
+}
+
+/* Horizontal header bar with a rounded right end-cap */
+.lcars-top {
+  grid-area: top;
+  background: var(--lcars-gold);
+  border-radius: 0 9999px 9999px 0;
+  display: flex;
+  align-items: center;
+  padding: 0 1.2rem;
+  color: #000;
+  min-width: 0;
+}
+
+/* Left rail of stacked colour blocks (the menu) */
+.lcars-rail {
+  grid-area: rail;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.lcars-rail-btn,
+.lcars-rail-block {
+  position: relative;
+  border: none;
+  color: #000;
+  font-family: 'Antonio', sans-serif;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 6px 10px;
+  min-height: 46px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  cursor: pointer;
+  line-height: 1;
+}
+.lcars-rail > *:last-child { border-bottom-left-radius: 2rem; }
+.lcars-rail-btn .tag {
+  position: absolute;
+  top: 5px;
+  left: 9px;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.55;
+  letter-spacing: 0;
+}
+.lcars-rail-btn .lbl { font-size: 14px; }
+.lcars-rail-block .lbl { font-size: 12px; opacity: 0.85; }
+.lcars-rail-btn:hover { filter: brightness(1.12); }
+
+/* Content area, inset to the right of the rail/elbow */
+.lcars-main {
+  grid-area: main;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 0 1rem 1rem 0;
 }

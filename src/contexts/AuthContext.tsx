@@ -36,18 +36,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);  useEffect(() => {
-    // Check for stored authentication (both dev and production)
-    const storedUser = sessionStorage.getItem('streamUser') || localStorage.getItem('streamUser');
-    
+    // Restore a persisted login. Use localStorage so the session survives the
+    // app being closed and the Android back button — sessionStorage is wiped
+    // when the mobile WebView/activity is destroyed, which was logging the
+    // phone out every time the user hit back.
+    const storedUser = localStorage.getItem('streamUser') || sessionStorage.getItem('streamUser');
+
     if (storedUser) {
       try {
         const userData = JSON.parse(storedUser);
         setUser(userData);
-        // Migrate to sessionStorage if it was in localStorage
-        if (!sessionStorage.getItem('streamUser')) {
-          sessionStorage.setItem('streamUser', storedUser);
-          localStorage.removeItem('streamUser');
-        }
+        // Make sure it lives in localStorage for next launch.
+        localStorage.setItem('streamUser', storedUser);
+        sessionStorage.removeItem('streamUser');
       } catch (error) {
         console.error('Error parsing stored user data:', error);
         sessionStorage.removeItem('streamUser');
@@ -82,8 +83,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       setUser(userData);
-      // Store in sessionStorage for session-based auth
-      sessionStorage.setItem('streamUser', JSON.stringify(userData));
+      // Persist across app restarts and the back button (mobile needs this).
+      localStorage.setItem('streamUser', JSON.stringify(userData));
       
       // Clear any previous errors
       setError(null);
